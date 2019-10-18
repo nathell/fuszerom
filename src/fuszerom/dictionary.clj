@@ -16,6 +16,15 @@
 (defn read-null-terminated-string [buf]
   (String. (into-array Byte/TYPE (take-while (comp not zero?) (repeatedly #(.get buf))))))
 
+(defn read-tag [buf]
+  [(Short/toUnsignedInt (.getShort buf))
+   (read-null-terminated-string buf)])
+
+(defn read-tags [buf]
+  (let [num (Short/toUnsignedInt (.getShort buf))
+        tags (repeatedly num #(read-tag buf))]
+    (into {} tags)))
+
 (def magic-number (unchecked-int 0x8fc2bc1b))
 (def version-number 21)
 (def version-number-offset 4)
@@ -34,7 +43,13 @@
         _ (.position buffer (+ fsa-data-offset fsa-data-size 4))
         id (read-null-terminated-string buffer)
         copyright (read-null-terminated-string buffer)
-        tagset-id (read-null-terminated-string buffer)]
+        tagset-id (read-null-terminated-string buffer)
+        tags (read-tags buffer)
+        names (read-tags buffer)
+        labels (read-tags buffer)]
     {:id id
      :copyright copyright
-     :tagset-id tagset-id}))
+     :tagset-id tagset-id
+     :tags tags
+     :names names
+     :labels labels}))
