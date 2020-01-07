@@ -74,12 +74,21 @@
         labels (read-tags buffer)
         _ (.position buffer (+ epilogue-offset a1-size 4))
         separators-list (read-separators-list buffer)
-        segrules-fsa-map (read-segrules-fsa-map buffer)]
-    {:id id
+        segrules-fsa-map (read-segrules-fsa-map buffer)
+        _ (.position buffer implementation-number-offset)
+        impl-num (.get buffer)
+        _ (.position buffer fsa-data-offset)
+        short-labels (vec (take 257 (repeatedly #(.get buffer))))]
+    {:buffer buffer
+     :short-labels short-labels
+     :id id
      :copyright copyright
      :tagset-id tagset-id
      :tags tags
      :names names
      :labels labels
      :separators-list separators-list
-     :segrules-fsa-map segrules-fsa-map}))
+     :segrules-fsa-map segrules-fsa-map
+     :impl-num impl-num}))
+
+(defn follow [{:keys }])

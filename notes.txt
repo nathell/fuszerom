@@ -1,0 +1,10 @@
+na offsecie 10 jest 257-bajtowy wektor "label -> short label"
+od offsetu 267 zaczynają się opisy stanów
+każdy stan ma na początku 1 lub 2 bajty opisujące, czy jest akceptujący i ile jest z niego przejść
+każde przejście ma:
+ 1 bajt -> offset size (2 bity, 0-3) + short label (6 bitów)
+ jeśli shortlabel == 0, to jeszcze jeden bajt (właściwy numer labelki)
+ offset-size bajtów oznaczających offset stanu docelowego
+
+sgjp-a:
+przejście ze stanu początkowego po c == -62 (194) daje stan docelowy o offsecie 9248635, nieakceptujący
