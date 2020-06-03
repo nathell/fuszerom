@@ -34,11 +34,35 @@
     (into {} (repeatedly num #(vector (read-null-terminated-string buf)
                                       (read-null-terminated-string buf))))))
 
+(defn read-segrules-initial-transitions [arr]
+  (let [buf (nio/byte-buffer arr)
+        _ (.position buf 1)
+        num-transitions (.get buf)]
+    (into {}
+          (repeatedly num-transitions (fn []
+                                        (let [index (.get buf)
+                                              shift (.get buf)
+                                              offset (.getShort buf)
+                                              b1 (aget arr offset)
+                                              b2 (aget arr (inc offset))
+                                              accepting (bit-test b1 0)
+                                              weak (bit-test b1 1)
+                                              sink (zero? b2)
+                                              failed (and sink (not accepting))]
+                                          [index {:shift (not= shift 0)
+                                                  :offset offset
+                                                  :accepting accepting
+                                                  :weak weak
+                                                  :sink sink
+                                                  :failed failed}]))))))
+
 (defn read-segrules-fsa [buf]
-  (let [size (.getInt buf)]
-    ;; TODO: deserialize the FSA
-    (.position buf (+ (.position buf) size))
-    size))
+  (let [size (.getInt buf)
+        arr (byte-array size)]
+    ;; TODO: deserialize the FSA more fully
+    (.get buf arr)
+    {:image arr
+     :initial-transitions (read-segrules-initial-transitions arr)}))
 
 (defn read-segrules-fsa-entry [buf]
   [(read-segrules-fsa-options buf)
