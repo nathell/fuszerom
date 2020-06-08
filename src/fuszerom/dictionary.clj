@@ -79,16 +79,40 @@
 (def fsa-data-size-offset 6)
 (def fsa-data-offset 10)
 
+(defn read-bytes [buf size]
+  (loop [res 0 left size]
+    (if (zero? left)
+      res
+      (let [x (bit-and (.get buf) 255)]
+        (recur (+ (bit-shift-left res 8) x) (dec left))))))
+
+(defn read-cfsa1-transition-data [buf]
+  (let [b1 (.get buf)
+        offset-size (bit-and b1 3)
+        short-label (bit-and (bit-shift-right b1 2) 63)
+        label (when (zero? short-label)
+                (.get buf))]
+    {:short-label short-label, :label label, :offset-size offset-size, :offset (read-bytes buf offset-size)}))
+
+(defn read-cfsa1-all-transitions [buf]
+  (let [count (.get buf)]
+    (repeatedly count (partial read-cfsa1-transition-data buf))))
+
+(defn read-fsa [buffer]
+  (.position buffer fsa-data-size-offset)
+  (let [fsa-data-size (.getInt buffer)
+        arr (byte-array fsa-data-size)]
+    (.get buffer arr)
+    arr))
+
 (defn load-dictionary [filename]
   (let [bytes (slurp-bytes filename)
         buffer (nio/byte-buffer bytes)
         _ (when-not (and (= (.getInt buffer) magic-number)
                          (= (.get buffer) version-number))
             (throw (ex-info "Not a dictionary file" {:filename filename})))
-        _ (.position buffer fsa-data-size-offset)
-        fsa-data-size (.getInt buffer)
-        epilogue-offset (+ fsa-data-offset fsa-data-size)
-        _ (.position buffer epilogue-offset)
+        fsa (read-fsa buffer)
+        epilogue-offset (.position buffer)
         a1-size (.getInt buffer) ; FIXME: proper name
         id (read-null-terminated-string buffer)
         copyright (read-null-terminated-string buffer)
@@ -106,4 +130,11 @@
      :names names
      :labels labels
      :separators-list separators-list
+     :fsa fsa
      :segrules-fsa-map segrules-fsa-map}))
+
+(comment
+  (def dict (load-dictionary "../vendor/Morfeusz/dict/sgjp-a.dict"))
+  (def fbuf (nio/byte-buffer (:fsa dict)))
+  (.position fbuf 257)
+  (read-cfsa1-all-transitions fbuf))

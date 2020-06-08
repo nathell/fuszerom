@@ -3,6 +3,6 @@
   :url "http://example.com/FIXME"
   :license {:name "2-clause BSD"
             :url "http://morfeusz.sgjp.pl/doc/license/"}
-  :dependencies [[org.clojure/clojure "1.10.0"]
+  :dependencies [[org.clojure/clojure "1.10.1" :scope "provided"]
                  [nio "1.0.4"]]
   :repl-options {:init-ns fuszerom.core})
